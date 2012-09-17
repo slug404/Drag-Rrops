@@ -4,6 +4,7 @@
 #include <QDragMoveEvent>
 #include <QDragEnterEvent>
 #include <QDebug>
+#include <QGridLayout>
 
 WidgetEdit::WidgetEdit(QWidget *parent) :
 	QWidget(parent)
@@ -44,21 +45,62 @@ void WidgetEdit::dropEvent(QDropEvent *event)
 	else
 	{
 		event->ignore();
-	}
+    }
+}
+
+bool WidgetEdit::eventFilter(QObject *target, QEvent *event)
+{
+    if(target == pQmlEditView_)
+    {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        switch(event->type())
+        {
+            case QEvent::MouseMove:
+            {
+                qDebug() << "QEvent::MouseMove";
+
+                break;
+            }
+            case QEvent::MouseButtonRelease:
+            {
+                qDebug() << "QEvent::MouseButtonRelease";
+                break;
+            }
+            default:
+            {
+                //...
+                break;
+            }
+        }
+    }
+    return 0;
 }
 
 void WidgetEdit::initSetting()
 {
 	//接受拖放
-	this->setAcceptDrops(true);
+	//this->setAcceptDrops(true);
 }
 
 void WidgetEdit::initData()
 {
 	pTreeWidget_ = NULL;
+    pQmlEditView_ = new QDeclarativeView(this);
+    //pQmlEditView_->installEventFilter(this);
+    pQmlEditView_->setSource(QUrl::fromLocalFile("QML_Edit.qml"));
+
+    pQmlEditItem_ = (QObject *)pQmlEditView_->rootObject();
+    connect(this, SIGNAL(signalCreateComponent(QVariant,QVariant,QVariant)), pQmlEditItem_, SLOT(createComponent(QVariant,QVariant,QVariant)));
+    //emit signalCreateComponent(100, 100, tr("QML_Item.qml"));
 }
 
 void WidgetEdit::initGui()
 {
+	//qmlEditView_.show();
+
+	//添加QML组件到QWidget上
+    QGridLayout *pGridLayout = new QGridLayout(this);
+    pGridLayout->addWidget(pQmlEditView_);
+    this->setLayout(pGridLayout);
 }
 
